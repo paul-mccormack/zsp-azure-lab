@@ -119,7 +119,7 @@ After 10 minutes, the role assignment is automatically revoked.
 
 - **ZSP Function Gateway** - Azure Function App with two endpoints:
   - `/api/nhi-access` - Grants RBAC role assignments to service principals
-  - `/api/human-access` - Grants Entra group membership to human admins
+  - `/api/admin-access` - Grants Entra group membership to human admins
 - **Durable Functions** - Schedules and executes automatic revocation
 - **Log Analytics** - Custom `ZSPAudit_CL` table for audit trail
 - **Data Collection Endpoint/Rule** - Ingests audit events from the Function

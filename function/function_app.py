@@ -22,7 +22,7 @@ app = df.DFApp(http_auth_level=func.AuthLevel.FUNCTION)
 # HTTP TRIGGERS - Access Request Endpoints
 # =============================================================================
 
-@app.route(route="human-access", methods=["POST"])
+@app.route(route="admin-access", methods=["POST"])
 @app.durable_client_input(client_name="client")
 async def admin_access_request(req: func.HttpRequest, client) -> func.HttpResponse:
     """
