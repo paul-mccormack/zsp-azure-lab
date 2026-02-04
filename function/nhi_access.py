@@ -75,26 +75,44 @@ async def grant_nhi_access(
     # Get role definition ID
     role_definition_id = get_role_definition_id(role_name, subscription_id)
 
-    # Create role assignment
+    # Create role assignment (handle existing assignment conflicts gracefully)
     assignment_params = RoleAssignmentCreateParameters(
         role_definition_id=role_definition_id,
         principal_id=sp_object_id,
         principal_type="ServicePrincipal"
     )
 
-    assignment = auth_client.role_assignments.create(
-        scope=scope,
-        role_assignment_name=assignment_name,
-        parameters=assignment_params
-    )
+    try:
+        assignment = auth_client.role_assignments.create(
+            scope=scope,
+            role_assignment_name=assignment_name,
+            parameters=assignment_params
+        )
+        assignment_id = assignment.id
+    except Exception as e:
+        error_msg = str(e).lower()
+        if "conflict" in error_msg or "already exists" in error_msg:
+            logging.info(f"Role assignment already exists for {sp_object_id} on {scope}, looking up existing assignment")
+            # Find the existing assignment (filter only supports principalId, not compound)
+            existing = auth_client.role_assignments.list_for_scope(
+                scope=scope,
+                filter=f"principalId eq '{sp_object_id}'"
+            )
+            matching = [a for a in existing if a.role_definition_id.endswith(ROLE_DEFINITIONS.get(role_name, ""))]
+            if matching:
+                assignment_id = matching[0].id
+            else:
+                raise
+        else:
+            raise
 
     expiry_time = datetime.now(timezone.utc) + timedelta(minutes=duration_minutes)
 
-    logging.info(f"Role assignment created: {assignment.id}, expires at {expiry_time.isoformat()}")
+    logging.info(f"Role assignment ready: {assignment_id}, expires at {expiry_time.isoformat()}")
 
     return {
         "status": "granted",
-        "assignment_id": assignment.id,
+        "assignment_id": assignment_id,
         "assignment_name": assignment_name,
         "sp_object_id": sp_object_id,
         "scope": scope,

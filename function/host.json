@@ -15,6 +15,9 @@
     }
   },
   "extensions": {
+    "http": {
+      "routePrefix": ""
+    },
     "durableTask": {
       "storageProvider": {
         "connectionStringName": "AzureWebJobsStorage"

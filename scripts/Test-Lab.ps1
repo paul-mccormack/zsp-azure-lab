@@ -26,9 +26,10 @@
     Duration in minutes for test access grant. Default: 2
 
 .EXAMPLE
-    ./Test-Lab.ps1 -FunctionAppUrl "https://zsp-lab-gateway.azurewebsites.net" `
+    ./Test-Lab.ps1 -FunctionAppUrl "https://zsp-lab-gw-abc123.azurewebsites.net" `
                    -BackupSpObjectId "abc123" `
-                   -KeyVaultResourceId "/subscriptions/.../Microsoft.KeyVault/vaults/..."
+                   -KeyVaultResourceId "/subscriptions/.../Microsoft.KeyVault/vaults/..." `
+                   -FunctionKey "your-function-key"
 #>
 
 [CmdletBinding()]
@@ -41,6 +42,9 @@ param(
 
     [Parameter(Mandatory)]
     [string]$KeyVaultResourceId,
+
+    [Parameter(Mandatory)]
+    [string]$FunctionKey,
 
     [Parameter()]
     [switch]$WaitForRevocation,
@@ -60,7 +64,8 @@ $failed = 0
 Write-Host "`nTest 1: Health endpoint" -ForegroundColor Yellow
 try {
     $healthUrl = "$FunctionAppUrl/api/health"
-    $healthResponse = Invoke-RestMethod -Uri $healthUrl -Method GET -TimeoutSec 30
+    $headers = @{ "x-functions-key" = $FunctionKey }
+    $healthResponse = Invoke-RestMethod -Uri $healthUrl -Method GET -Headers $headers -TimeoutSec 30
 
     if ($healthResponse.status -eq 'healthy') {
         Write-Host "  PASSED: Health check returned healthy" -ForegroundColor Green
@@ -81,6 +86,7 @@ Write-Host "`nTest 2: NHI Access grant" -ForegroundColor Yellow
 $assignmentId = $null
 try {
     $nhiUrl = "$FunctionAppUrl/api/nhi-access"
+    $headers = @{ "x-functions-key" = $FunctionKey }
     $body = @{
         sp_object_id = $BackupSpObjectId
         scope = $KeyVaultResourceId
@@ -89,7 +95,7 @@ try {
         workflow_id = "smoke-test-$(Get-Date -Format 'yyyyMMddHHmmss')"
     } | ConvertTo-Json
 
-    $nhiResponse = Invoke-RestMethod -Uri $nhiUrl -Method POST -Body $body -ContentType "application/json" -TimeoutSec 60
+    $nhiResponse = Invoke-RestMethod -Uri $nhiUrl -Method POST -Body $body -ContentType "application/json" -Headers $headers -TimeoutSec 60
 
     if ($nhiResponse.status -eq 'granted') {
         Write-Host "  PASSED: Access granted" -ForegroundColor Green

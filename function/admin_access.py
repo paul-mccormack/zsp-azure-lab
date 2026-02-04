@@ -48,12 +48,19 @@ async def grant_admin_access(
     except Exception as e:
         logging.warning(f"Could not check existing membership: {e}")
 
-    # Add user to group
+    # Add user to group (handle duplicate membership gracefully)
     request_body = ReferenceCreate(
         odata_id=f"https://graph.microsoft.com/v1.0/directoryObjects/{user_id}"
     )
 
-    await graph_client.groups.by_group_id(group_id).members.ref.post(request_body)
+    try:
+        await graph_client.groups.by_group_id(group_id).members.ref.post(request_body)
+    except Exception as e:
+        error_msg = str(e).lower()
+        if "already exist" in error_msg or "added object references already exist" in error_msg:
+            logging.info(f"User {user_id} is already a member of group {group_id}, treating as success")
+        else:
+            raise
 
     expiry_time = datetime.now(timezone.utc) + timedelta(minutes=duration_minutes)
 

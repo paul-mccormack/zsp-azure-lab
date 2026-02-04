@@ -182,7 +182,7 @@ az rest --method PUT `
     --uri "https://management.azure.com${workspaceId}/tables/ZSPAudit_CL?api-version=2022-10-01" `
     --headers "Content-Type=application/json" `
     --body $tableBody `
-    --output none 2>&1
+    --output none 2>$null
 
 Write-Host "    ZSPAudit_CL table created" -ForegroundColor Green
 
@@ -237,7 +237,7 @@ $dcrResult = az rest --method PUT `
     --uri "https://management.azure.com/subscriptions/$($config['SUBSCRIPTION_ID'])/resourceGroups/$rgName/providers/Microsoft.Insights/dataCollectionRules/$ProjectName-dcr?api-version=2022-06-01" `
     --headers "Content-Type=application/json" `
     --body $dcrBody `
-    --output json 2>&1 | ConvertFrom-Json
+    --output json 2>$null | ConvertFrom-Json
 
 $dcrRuleId = $dcrResult.properties.immutableId
 $config['DCR_RULE_ID'] = $dcrRuleId
@@ -323,10 +323,34 @@ Write-Host ""
 # Step 7: Run smoke test
 if (-not $SkipTest) {
     Write-Host "Step 7/7: Running smoke test..." -ForegroundColor Cyan
+
+    # Retrieve function key for authentication
+    Write-Host "  Retrieving function key..." -ForegroundColor Cyan
+    $functionKey = az functionapp keys list `
+        --name $config['FUNCTION_APP_NAME'] `
+        --resource-group $config['RESOURCE_GROUP_NAME'] `
+        --query "functionKeys.default" `
+        --output tsv 2>$null
+
+    if (-not $functionKey) {
+        # Fallback to master key
+        $functionKey = az functionapp keys list `
+            --name $config['FUNCTION_APP_NAME'] `
+            --resource-group $config['RESOURCE_GROUP_NAME'] `
+            --query "masterKey" `
+            --output tsv 2>$null
+    }
+
+    if (-not $functionKey) {
+        Write-Host "  WARNING: Could not retrieve function key, smoke tests may fail with 401" -ForegroundColor Yellow
+        $functionKey = ""
+    }
+
     & "$ScriptDir/Test-Lab.ps1" `
         -FunctionAppUrl $config['FUNCTION_APP_URL'] `
         -BackupSpObjectId $config['BACKUP_SP_OBJECT_ID'] `
-        -KeyVaultResourceId $config['KEYVAULT_ID']
+        -KeyVaultResourceId $config['KEYVAULT_ID'] `
+        -FunctionKey $functionKey
 }
 
 # Summary
@@ -345,10 +369,13 @@ Write-Host "  Security Reader: $($config['SECURITY_READER_GROUP_ID'])"
 Write-Host ""
 Write-Host "Backup Service Principal: $($config['BACKUP_SP_OBJECT_ID'])"
 Write-Host ""
+Write-Host "Function Key: $functionKey" -ForegroundColor Cyan
+Write-Host ""
 Write-Host "Test NHI access with:"
 Write-Host @"
 curl -X POST "$($config['FUNCTION_APP_URL'])/api/nhi-access" \
   -H "Content-Type: application/json" \
+  -H "x-functions-key: $functionKey" \
   -d '{
     "sp_object_id": "$($config['BACKUP_SP_OBJECT_ID'])",
     "scope": "$($config['KEYVAULT_ID'])",

@@ -90,7 +90,7 @@ else {
                 --uri "https://graph.microsoft.com/v1.0/servicePrincipals/$FunctionAppPrincipalId/appRoleAssignments" `
                 --headers "Content-Type=application/json" `
                 --body $body `
-                --output none 2>&1
+                --output none 2>$null
             Write-Host "    Granted" -ForegroundColor Green
             break
         }
@@ -124,7 +124,7 @@ else {
                 --uri "https://graph.microsoft.com/v1.0/servicePrincipals/$FunctionAppPrincipalId/appRoleAssignments" `
                 --headers "Content-Type=application/json" `
                 --body $body `
-                --output none 2>&1
+                --output none 2>$null
             Write-Host "    Granted" -ForegroundColor Green
             break
         }
@@ -158,7 +158,7 @@ else {
                 --uri "https://graph.microsoft.com/v1.0/servicePrincipals/$FunctionAppPrincipalId/appRoleAssignments" `
                 --headers "Content-Type=application/json" `
                 --body $body `
-                --output none 2>&1
+                --output none 2>$null
             Write-Host "    Granted" -ForegroundColor Green
             break
         }
@@ -191,7 +191,7 @@ else {
                 --assignee-principal-type ServicePrincipal `
                 --role "User Access Administrator" `
                 --scope $ResourceGroupId `
-                --output none 2>&1
+                --output none 2>$null
             Write-Host "    Granted" -ForegroundColor Green
             break
         }
@@ -225,7 +225,7 @@ if ($DcrScope) {
                     --assignee-principal-type ServicePrincipal `
                     --role "Monitoring Metrics Publisher" `
                     --scope $DcrScope `
-                    --output none 2>&1
+                    --output none 2>$null
                 Write-Host "    Granted" -ForegroundColor Green
                 break
             }

@@ -15,6 +15,9 @@ param deployerPrincipalId string
 @description('Tags for all resources')
 param tags object = {}
 
+// Generate unique suffix for globally unique resource names
+var suffix = substring(uniqueString(resourceGroup().id), 0, 6)
+
 // Merge default tags with provided tags
 var resourceTags = union({
   project: projectName
@@ -24,7 +27,7 @@ var resourceTags = union({
 
 // Key Vault - Target resource for NHI demo
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
-  name: '${projectName}-kv'
+  name: '${projectName}-kv-${suffix}'
   location: location
   tags: resourceTags
   properties: {
@@ -64,7 +67,7 @@ resource demoSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
 
 // Storage Account - Target resource for NHI demo
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
-  name: replace('${projectName}sa', '-', '')
+  name: '${replace(projectName, '-', '')}sa${suffix}'
   location: location
   tags: resourceTags
   sku: {

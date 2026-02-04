@@ -52,6 +52,7 @@ The gateway:
 - Azure CLI configured (`az login`)
 - PowerShell 7+ (`pwsh`)
 - Entra ID P1 or P2 license (for group-based role assignment)
+- **Privileged Role Administrator** directory role (required to create role-assignable security groups)
 
 ---
 
@@ -90,9 +91,10 @@ Request temporary Key Vault access for a service principal:
 ```bash
 curl -X POST "$FUNCTION_URL/api/nhi-access" \
   -H "Content-Type: application/json" \
+  -H "x-functions-key: $FUNCTION_KEY" \
   -d '{
     "sp_object_id": "BACKUP_SP_OBJECT_ID",
-    "scope": "/subscriptions/.../providers/Microsoft.KeyVault/vaults/zsp-lab-kv",
+    "scope": "/subscriptions/.../providers/Microsoft.KeyVault/vaults/zsp-lab-kv-XXXXXX",
     "role": "Key Vault Secrets User",
     "duration_minutes": 10,
     "workflow_id": "manual-test"
@@ -194,6 +196,7 @@ az ad app delete --id "<backup-app-id>"
 
 - [Blog: Just-In-Time Access for AI Agents](https://nineliveszerotrust.com/blog/zero-standing-privilege-azure/)
 - [Lab Guide with KQL Queries](https://nineliveszerotrust.com/labs/zsp-azure/)
+- [Full Lab (nine-lives-security)](https://github.com/nine-lives-security/nine-lives-zero-trust/tree/main/labs/zsp-azure)
 - [Microsoft Graph PIM APIs](https://learn.microsoft.com/en-us/entra/id-governance/privileged-identity-management/pim-apis)
 - [Azure Durable Functions](https://learn.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-overview)
 

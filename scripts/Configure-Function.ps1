@@ -118,7 +118,7 @@ az functionapp config appsettings set `
     --name $FunctionAppName `
     --resource-group $ResourceGroupName `
     --settings $settings `
-    --output none 2>&1
+    --output none 2>$null
 
 if ($LASTEXITCODE -ne 0) {
     throw "Failed to update Function App settings"

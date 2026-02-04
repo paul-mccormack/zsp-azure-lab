@@ -95,15 +95,23 @@ if ($existingIntuneGroup -and $existingIntuneGroup.Count -gt 0) {
     Write-Host "    Group already exists: $intuneGroupId" -ForegroundColor Green
 }
 else {
-    $intuneGroup = az ad group create `
-        --display-name $intuneGroupName `
-        --description "ZSP group for Intune administration. Members are added/removed automatically by ZSP Gateway. Do not modify manually." `
-        --mail-nickname "SG-Intune-Admins-ZSP" `
-        --is-assignable-to-role true `
-        --output json 2>&1 | ConvertFrom-Json
+    $groupBody = @{
+        displayName = $intuneGroupName
+        description = "ZSP group for Intune administration. Members are added/removed automatically by ZSP Gateway. Do not modify manually."
+        mailNickname = "SG-Intune-Admins-ZSP"
+        mailEnabled = $false
+        securityEnabled = $true
+        isAssignableToRole = $true
+    } | ConvertTo-Json -Compress
+
+    $intuneGroup = az rest --method POST `
+        --uri "https://graph.microsoft.com/v1.0/groups" `
+        --headers "Content-Type=application/json" `
+        --body $groupBody `
+        --output json 2>$null | ConvertFrom-Json
 
     if (-not $intuneGroup.id) {
-        throw "Failed to create Intune Admins group"
+        throw "Failed to create Intune Admins group. Ensure the deployer has the Privileged Role Administrator directory role."
     }
     $intuneGroupId = $intuneGroup.id
     Write-Host "    Created: $intuneGroupId" -ForegroundColor Green
@@ -124,15 +132,23 @@ if ($existingSecurityGroup -and $existingSecurityGroup.Count -gt 0) {
     Write-Host "    Group already exists: $securityGroupId" -ForegroundColor Green
 }
 else {
-    $securityGroup = az ad group create `
-        --display-name $securityGroupName `
-        --description "ZSP group for Security Reader access. Members are added/removed automatically by ZSP Gateway." `
-        --mail-nickname "SG-Security-Reader-ZSP" `
-        --is-assignable-to-role true `
-        --output json 2>&1 | ConvertFrom-Json
+    $groupBody = @{
+        displayName = $securityGroupName
+        description = "ZSP group for Security Reader access. Members are added/removed automatically by ZSP Gateway."
+        mailNickname = "SG-Security-Reader-ZSP"
+        mailEnabled = $false
+        securityEnabled = $true
+        isAssignableToRole = $true
+    } | ConvertTo-Json -Compress
+
+    $securityGroup = az rest --method POST `
+        --uri "https://graph.microsoft.com/v1.0/groups" `
+        --headers "Content-Type=application/json" `
+        --body $groupBody `
+        --output json 2>$null | ConvertFrom-Json
 
     if (-not $securityGroup.id) {
-        throw "Failed to create Security Reader group"
+        throw "Failed to create Security Reader group. Ensure the deployer has the Privileged Role Administrator directory role."
     }
     $securityGroupId = $securityGroup.id
     Write-Host "    Created: $securityGroupId" -ForegroundColor Green
@@ -156,7 +172,7 @@ if (-not $intuneRole.value -or $intuneRole.value.Count -eq 0) {
         --uri "https://graph.microsoft.com/v1.0/directoryRoles" `
         --headers "Content-Type=application/json" `
         --body $activateBody `
-        --output json 2>&1 | ConvertFrom-Json
+        --output json 2>$null | ConvertFrom-Json
 
     if (-not $intuneRole.id) {
         throw "Failed to activate Intune Administrator role"
@@ -181,7 +197,7 @@ if (-not $existingIntuneMember.value -or $existingIntuneMember.value.Count -eq 0
         --uri "https://graph.microsoft.com/v1.0/directoryRoles/$intuneRoleId/members/`$ref" `
         --headers "Content-Type=application/json" `
         --body $memberBody `
-        --output none 2>&1
+        --output none 2>$null
     Write-Host "    Assignment created" -ForegroundColor Green
 }
 else {
@@ -201,7 +217,7 @@ if (-not $securityRole.value -or $securityRole.value.Count -eq 0) {
         --uri "https://graph.microsoft.com/v1.0/directoryRoles" `
         --headers "Content-Type=application/json" `
         --body $activateBody `
-        --output json 2>&1 | ConvertFrom-Json
+        --output json 2>$null | ConvertFrom-Json
 
     if (-not $securityRole.id) {
         throw "Failed to activate Security Reader role"
@@ -226,7 +242,7 @@ if (-not $existingSecurityMember.value -or $existingSecurityMember.value.Count -
         --uri "https://graph.microsoft.com/v1.0/directoryRoles/$securityRoleId/members/`$ref" `
         --headers "Content-Type=application/json" `
         --body $memberBody `
-        --output none 2>&1
+        --output none 2>$null
     Write-Host "    Assignment created" -ForegroundColor Green
 }
 else {
@@ -249,7 +265,7 @@ else {
     # Create application registration
     $backupApp = az ad app create `
         --display-name $backupAppName `
-        --output json 2>&1 | ConvertFrom-Json
+        --output json 2>$null | ConvertFrom-Json
 
     if (-not $backupApp.appId) {
         throw "Failed to create backup application"
@@ -263,7 +279,7 @@ else {
     }
 
     # Create service principal
-    $backupSp = az ad sp create --id $backupAppId --output json 2>&1 | ConvertFrom-Json
+    $backupSp = az ad sp create --id $backupAppId --output json 2>$null | ConvertFrom-Json
 
     if (-not $backupSp.id) {
         throw "Failed to create backup service principal"

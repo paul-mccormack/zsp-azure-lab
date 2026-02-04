@@ -22,7 +22,7 @@ app = df.DFApp(http_auth_level=func.AuthLevel.FUNCTION)
 # HTTP TRIGGERS - Access Request Endpoints
 # =============================================================================
 
-@app.route(route="admin-access", methods=["POST"])
+@app.route(route="api/admin-access", methods=["POST"])
 @app.durable_client_input(client_name="client")
 async def admin_access_request(req: func.HttpRequest, client) -> func.HttpResponse:
     """
@@ -142,7 +142,7 @@ async def admin_access_request(req: func.HttpRequest, client) -> func.HttpRespon
         )
 
 
-@app.route(route="nhi-access", methods=["POST"])
+@app.route(route="api/nhi-access", methods=["POST"])
 @app.durable_client_input(client_name="client")
 async def nhi_access_request(req: func.HttpRequest, client) -> func.HttpResponse:
     """
@@ -407,7 +407,7 @@ def revoke_role_assignment_activity(activityPayload: str):
 # HEALTH CHECK
 # =============================================================================
 
-@app.route(route="health", methods=["GET"])
+@app.route(route="api/health", methods=["GET"])
 def health_check(req: func.HttpRequest) -> func.HttpResponse:
     """Simple health check endpoint."""
     return func.HttpResponse(
