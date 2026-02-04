@@ -186,12 +186,6 @@ az ad app delete --id "<backup-app-id>"
 
 ---
 
-## Roadmap
-
-- **Terraform module** - Coming soon
-
----
-
 ## Resources
 
 - [Blog: Just-In-Time Access for AI Agents](https://nineliveszerotrust.com/blog/zero-standing-privilege-azure/)
